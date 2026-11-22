@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>CPC File Delivery</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Space+Grotesk:wght@600;700&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: 'Inter', system-ui, -apple-system, sans-serif;
+      background: #0a0f0d; color: #f4f7f5; min-height: 100vh;
+    }
+
+    .container { max-width: 1200px; margin: 0 auto; padding: 24px; }
+
+    /* Header */
+    .header {
+      display: flex; align-items: center; justify-content: center;
+      gap: 14px; margin-bottom: 36px; padding: 20px 0;
+      border-bottom: 1px solid rgba(43, 184, 140, 0.15);
+    }
+    .header img { height: 44px; }
+    .header-text h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 20px; font-weight: 700; color: #f4f7f5;
+      letter-spacing: 0.5px; text-transform: uppercase;
+    }
+    .header-text p {
+      font-size: 12px; color: #2bb88c; text-transform: uppercase;
+      letter-spacing: 1.5px; font-weight: 500;
+    }
+
+    /* Two-column layout */
+    .layout { display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: start; }
+
+    /* Left: Image grid */
+    .images-panel {
+      background: #141a17; border-radius: 12px; padding: 24px;
+      border: 1px solid rgba(43, 184, 140, 0.1);
+    }
+    .images-panel h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 16px; font-weight: 600; color: #f4f7f5; margin-bottom: 16px;
+    }
+    .image-count { font-size: 13px; color: #7a8a82; font-weight: 400; }
+
+    .image-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 10px;
+    }
+    .image-grid img {
+      width: 100%;
+      aspect-ratio: 1;
+      object-fit: cover;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.06);
+      background: #1a221e;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    .image-grid img:hover {
+      transform: scale(1.03);
+      border-color: rgba(43, 184, 140, 0.3);
+    }
+
+    .loading-previews {
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px; padding: 48px 0; color: #7a8a82; font-size: 14px;
+    }
+    .spinner {
+      width: 20px; height: 20px; border: 2px solid rgba(43, 184, 140, 0.2);
+      border-top-color: #2bb88c; border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .no-previews { text-align: center; padding: 48px 0; color: #5a6a62; font-size: 14px; }
+
+    /* Right: Payment panel */
+    .payment-panel {
+      background: #141a17; border-radius: 12px; padding: 28px;
+      border: 1px solid rgba(43, 184, 140, 0.1);
+      position: sticky; top: 24px;
+    }
+    .project-info { margin-bottom: 24px; }
+    .project-info .label {
+      font-size: 11px; color: #5a6a62; text-transform: uppercase;
+      letter-spacing: 1px; margin-bottom: 4px;
+    }
+    .project-info .value {
+      font-size: 15px; font-weight: 500; color: #f4f7f5; margin-bottom: 16px;
+    }
+
+    .amount-box {
+      background: rgba(43, 184, 140, 0.08); border: 1px solid rgba(43, 184, 140, 0.2);
+      border-radius: 8px; padding: 16px; text-align: center; margin-bottom: 24px;
+    }
+    .amount-box .amount-label {
+      font-size: 11px; color: #2bb88c; text-transform: uppercase; letter-spacing: 1px;
+    }
+    .amount-box .amount-value {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 28px; font-weight: 700; color: #35d6a4; margin-top: 4px;
+    }
+
+    .pay-btn {
+      display: block; width: 100%; padding: 14px;
+      background: #2bb88c; color: #0a0f0d; border: none; border-radius: 8px;
+      font-family: 'Inter', sans-serif;
+      font-size: 15px; font-weight: 600; cursor: pointer;
+      text-align: center; text-decoration: none; transition: background 0.2s;
+    }
+    .pay-btn:hover { background: #35d6a4; }
+
+    .status-badge {
+      display: inline-flex; align-items: center; gap: 6px;
+      padding: 6px 12px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      margin-bottom: 20px;
+    }
+    .status-badge.unpaid { background: rgba(245, 158, 11, 0.12); color: #f5b731; }
+    .status-badge.paid { background: rgba(43, 184, 140, 0.12); color: #35d6a4; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; }
+    .status-badge.unpaid .status-dot { background: #f5b731; }
+    .status-badge.paid .status-dot { background: #35d6a4; }
+
+    /* Download section */
+    .download-section {
+      margin-top: 20px; padding: 20px;
+      background: rgba(43, 184, 140, 0.08); border: 1px solid rgba(43, 184, 140, 0.2);
+      border-radius: 8px; text-align: center;
+    }
+    .download-section p { font-size: 14px; color: #35d6a4; margin-bottom: 12px; }
+    .download-btn {
+      display: inline-flex; align-items: center; gap: 8px;
+      padding: 12px 24px; background: #2bb88c; color: #0a0f0d;
+      border: none; border-radius: 8px; font-size: 15px; font-weight: 600;
+      cursor: pointer; text-decoration: none; transition: background 0.2s;
+    }
+    .download-btn:hover { background: #35d6a4; }
+
+    .polling-note { font-size: 12px; color: #5a6a62; text-align: center; margin-top: 12px; }
+
+    /* Error */
+    .error-box {
+      max-width: 500px; margin: 80px auto; text-align: center; padding: 40px;
+      background: #141a17; border-radius: 12px;
+      border: 1px solid rgba(43, 184, 140, 0.1);
+    }
+    .error-box h2 { color: #e05252; margin-bottom: 8px; font-family: 'Space Grotesk', sans-serif; }
+    .error-box p { color: #7a8a82; }
+
+    /* Footer */
+    .footer {
+      text-align: center; margin-top: 40px; padding: 20px 0;
+      color: #3a4a42; font-size: 12px;
+      border-top: 1px solid rgba(43, 184, 140, 0.08);
+    }
+    .footer a { color: #2bb88c; text-decoration: none; }
+
+    /* Responsive */
+    @media (max-width: 800px) {
+      .layout { grid-template-columns: 1fr; }
+      .payment-panel { position: static; order: -1; }
+      .image-grid { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+      .header { flex-direction: column; gap: 8px; }
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="https://www.clippingpathcenter.com/files/uploads/2026/09/Logo-Clipping-Path-Center.png" alt="Clipping Path Center">
+      <div class="header-text">
+        <p>File Delivery</p>
+      </div>
+    </div>
+
+    <div id="error-view" class="error-box hidden">
+      <h2>Not Found</h2>
+      <p id="error-message">This delivery link is invalid or has expired.</p>
+    </div>
+
+    <div id="main-view" class="layout hidden">
+      <!-- Left: Images -->
+      <div class="images-panel">
+        <h2>Preview <span id="image-count" class="image-count"></span></h2>
+        <div id="image-loading" class="loading-previews hidden">
+          <div class="spinner"></div> Loading previews...
+        </div>
+        <div id="image-grid" class="image-grid"></div>
+        <div id="no-previews" class="no-previews hidden">No preview images available.</div>
+      </div>
+
+      <!-- Right: Payment -->
+      <div class="payment-panel">
+        <div class="project-info">
+          <div class="label">Client</div>
+          <div class="value" id="client-name">&mdash;</div>
+          <div class="label">Project</div>
+          <div class="value" id="project-name">&mdash;</div>
+        </div>
+
+        <div id="status-unpaid" class="status-badge unpaid hidden">
+          <span class="status-dot"></span> Payment Pending
+        </div>
+        <div id="status-paid" class="status-badge paid hidden">
+          <span class="status-dot"></span> Paid
+        </div>
+
+        <div id="amount-section" class="amount-box hidden">
+          <div class="amount-label">Amount Due</div>
+          <div class="amount-value" id="amount-value">$0.00</div>
+        </div>
+
+        <a id="pay-button" href="#" target="_blank" class="pay-btn hidden">Pay Now</a>
+
+        <div id="download-section" class="download-section hidden">
+          <p>Payment received &mdash; your files are ready!</p>
+          <a id="download-btn" href="#" target="_blank" class="download-btn">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+            Download Files
+          </a>
+        </div>
+
+        <p id="polling-note" class="polling-note hidden">Checking payment status automatically...</p>
+      </div>
+    </div>
+
+    <div class="footer">
+      <a href="https://www.clippingpathcenter.com">clippingpathcenter.com</a>
+    </div>
+  </div>
+
+  <script>
+    var params = new URLSearchParams(window.location.search);
+    var invoiceId = params.get('invoice');
+
+    if (!invoiceId) {
+      document.getElementById('error-view').classList.remove('hidden');
+      document.getElementById('error-message').textContent = 'No invoice ID provided. Please use the link sent to you.';
+    } else {
+      checkStatus();
+    }
+
+    var pollingInterval;
+
+    async function checkStatus() {
+      try {
+        var res = await fetch('/api/check-status?invoice=' + invoiceId);
+        if (!res.ok) {
+          document.getElementById('error-view').classList.remove('hidden');
+          return;
+        }
+        var data = await res.json();
+        renderPage(data);
+      } catch (err) {
+        document.getElementById('error-view').classList.remove('hidden');
+        document.getElementById('error-message').textContent = 'Failed to load delivery details. Please try again.';
+      }
+    }
+
+    function renderPage(data) {
+      document.getElementById('main-view').classList.remove('hidden');
+
+      if (data.clientName) document.getElementById('client-name').textContent = data.clientName;
+      if (data.projectName) document.getElementById('project-name').textContent = data.projectName;
+
+      if (data.hasDropboxPreviews) {
+        loadDropboxPreviews();
+      } else if (data.previewImages && data.previewImages.length > 0) {
+        showPreviews(data.previewImages);
+      } else {
+        document.getElementById('no-previews').classList.remove('hidden');
+      }
+
+      if (data.paid) {
+        document.getElementById('status-paid').classList.remove('hidden');
+        document.getElementById('status-unpaid').classList.add('hidden');
+        fetchDownloadLink();
+        if (pollingInterval) clearInterval(pollingInterval);
+      } else {
+        document.getElementById('status-unpaid').classList.remove('hidden');
+
+        if (data.amountDue) {
+          document.getElementById('amount-section').classList.remove('hidden');
+          var amt = (data.amountDue / 100).toFixed(2);
+          var curr = (data.currency || 'usd').toUpperCase();
+          document.getElementById('amount-value').textContent = '$' + amt + ' ' + curr;
+        }
+
+        if (data.hostedInvoiceUrl) {
+          var btn = document.getElementById('pay-button');
+          btn.href = data.hostedInvoiceUrl;
+          btn.classList.remove('hidden');
+        }
+
+        document.getElementById('polling-note').classList.remove('hidden');
+        if (!pollingInterval) {
+          pollingInterval = setInterval(checkStatus, 10000);
+        }
+      }
+    }
+
+    function showPreviews(urls) {
+      var grid = document.getElementById('image-grid');
+      grid.innerHTML = '';
+      document.getElementById('image-count').textContent = '(' + urls.length + ' images)';
+      urls.forEach(function(url) {
+        var img = document.createElement('img');
+        img.src = url;
+        img.alt = 'Preview';
+        img.loading = 'lazy';
+        grid.appendChild(img);
+      });
+    }
+
+    async function loadDropboxPreviews() {
+      var loading = document.getElementById('image-loading');
+      var grid = document.getElementById('image-grid');
+      loading.classList.remove('hidden');
+
+      try {
+        var res = await fetch('/api/previews?invoice=' + invoiceId);
+        if (!res.ok) throw new Error('Failed to load');
+        var data = await res.json();
+        loading.classList.add('hidden');
+
+        if (data.thumbnails && data.thumbnails.length > 0) {
+          document.getElementById('image-count').textContent = '(' + data.totalFiles + ' images)';
+          data.thumbnails.forEach(function(item) {
+            var img = document.createElement('img');
+            img.src = item.thumbnail;
+            img.alt = item.name;
+            img.loading = 'lazy';
+            grid.appendChild(img);
+          });
+        } else {
+          document.getElementById('no-previews').classList.remove('hidden');
+        }
+      } catch (err) {
+        loading.classList.add('hidden');
+        document.getElementById('no-previews').classList.remove('hidden');
+      }
+    }
+
+    async function fetchDownloadLink() {
+      try {
+        var res = await fetch('/api/get-link?invoice=' + invoiceId);
+        if (!res.ok) return;
+        var data = await res.json();
+        if (data.downloadLink) {
+          document.getElementById('download-section').classList.remove('hidden');
+          document.getElementById('download-btn').href = data.downloadLink;
+          document.getElementById('pay-button').classList.add('hidden');
+          document.getElementById('amount-section').classList.add('hidden');
+          document.getElementById('polling-note').classList.add('hidden');
+        }
+      } catch (err) {}
+    }
+  </script>
+</body>
+</html>
